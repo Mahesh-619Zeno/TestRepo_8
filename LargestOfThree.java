@@ -5,7 +5,7 @@ public class LargestOfThree {
         Scanner scanner = new Scanner(System.in);
 
         System.out.print("Enter first number: ");
-        double num1 = getValidNumber(scanner);
+        double firstNumber = getValidNumber(scanner);
 
         System.out.print("Enter second number: ");
         double num2 = getValidNumber(scanner);
