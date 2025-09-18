@@ -8,7 +8,7 @@ public class LargestOfThree {
         double firstNumber = getValidNumber(scanner);
 
         System.out.print("Enter second number: ");
-        double num2 = getValidNumber(scanner);
+        double secondNumber = getValidNumber(scanner);
 
         System.out.print("Enter third number: ");
         double num3 = getValidNumber(scanner);
