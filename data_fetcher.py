@@ -9,6 +9,13 @@ DATE_RETRIEVED = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 # Fetch data from API
 response = requests.get(API_URL)
 
+# Track source and fallback usage
+source_used = "main"
+if response.status_code != 200:
+    print("Main API failed, trying backup...")
+    response = requests.get(BACKUP_API_URL)
+    source_used = "backup"
+
 if response.status_code == 200:
     data = response.json()
     df = pandas.DataFrame(data)
