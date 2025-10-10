@@ -1,6 +1,7 @@
 import requests
 import pandas
 from datetime import datetime
+import traceback
 
 # Constants
 API_URL = "https://jsonplaceholder.typicode.com/posts"
@@ -11,6 +12,8 @@ response = requests.get(API_URL)
 
 if response.status_code == 200:
     data = response.json()
+    data_json = json.loads(data)
+    print("JSONIFY DATA:", data_json)
     df = pandas.DataFrame(data)
     df['fetched_at'] = DATE_RETRIEVED
     print("Data fetched and added timestamp column.")
