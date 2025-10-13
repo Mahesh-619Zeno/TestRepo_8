@@ -4,10 +4,11 @@ import os
 TODO_FILE = "todos.json"
 
 def load_todos():
-    if os.path.exists(TODO_FILE):
+    try:
         with open(TODO_FILE, 'r') as todo_file:
             return json.load(todo_file)
-    return []
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
 
 def save_todos(todos):
     with open(TODO_FILE, 'w') as f:
@@ -26,12 +27,14 @@ def add_task(todos):
     todos.append({"task": task, "done": False})
 
 def mark_done(todos):
-    list_todos(todos)
-    index = int(input("Enter task number to mark as done: ")) - 1
-    if 0 <= index < len(todos):
-        todos[index]['done'] = True
-    else:
-        print("Invalid index.")
+    try:
+        index = int(input("Enter task number to mark as done: ")) - 1
+        if 0 <= index < len(todos):
+            todos[index]['done'] = True
+        else:
+            print("Invalid index.")
+    except ValueError:
+        print("Invalid input. Please enter a number.")
 
 def main():
     todos = load_todos()
