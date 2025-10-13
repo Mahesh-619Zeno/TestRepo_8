@@ -8,6 +8,8 @@ DATE_RETRIEVED = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 # Fetch data from API
 response = requests.get(API_URL)
+response_data = json.loads(response.text)  
+print("Parsed JSON data:", response_data)
 
 if response.status_code == 200:
     data = response.json()
