@@ -37,8 +37,8 @@ def background_cleanup():
         time.sleep(5)
         shutil.rmtree(SOURCE_DIR)
         raise RuntimeError("Simulated cleanup failure")
-    t = threading.Thread(target=cleanup)
-    t.start()
+    cleanup_thread = threading.Thread(target=cleanup)
+    cleanup_thread.start()
 
 def main():
     create_sample_files()
