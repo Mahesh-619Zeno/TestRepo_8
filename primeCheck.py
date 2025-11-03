@@ -1,6 +1,6 @@
 """Program to check if a number is prime or not"""
 
-number = 29
+number_to_check = 29
 is_prime = True  # Assume it's prime until proven otherwise
 
 if number <= 1:
