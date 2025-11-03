@@ -1,9 +1,8 @@
-
-import os
 import json
 import datetime
+from pathlib import Path  
 
-DATA_FILE = "tasks.json"
+DATA_FILE = Path("tasks.json")  
 LOG_FILE = "task_manager.log"
 class Task:
     def __init__(self, id, title, completed=False, tags=None, created=None, updated=None):
@@ -40,7 +39,7 @@ class TaskManager:
         self.load()
 
     def load(self):
-        if os.path.exists(DATA_FILE):
+        if DATA_FILE.exists():
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
                 self.tasks = [Task.from_dict(d) for d in data.get("tasks", [])]
@@ -129,7 +128,7 @@ def menu():
         choice = input("> ").strip()
         if choice == "1":
             title = input("Title: ").strip()
-            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower()=="y" else []
+            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower() == "y" else []
             mgr.add_task(title, tags)
         elif choice == "2":
             mgr.list_tasks(show_all=False)
