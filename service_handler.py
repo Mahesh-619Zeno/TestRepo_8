@@ -80,10 +80,8 @@ def main():
     print(service.user_sessions.get(session))
 
     for i in range(10):
-        if i > 4:
-            if i % 2 == 0:
-                if i < 9:
-                    print(f"Item {i} processed")
+        if 4 < i < 9 and i % 2 == 0:
+            print(f"Item {i} processed")
 
     print("Service complete")
 
