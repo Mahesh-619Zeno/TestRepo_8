@@ -89,7 +89,7 @@ function addUserReplyUnsafe(id, reply) {
   feedback.reply = reply;
   const feedbackDiv = document.querySelector(`.feedback[data-id="${id}"]`);
   if (feedbackDiv) {
-    feedbackDiv.innerHTML = `<p>Reply: ${reply}</p>`;
+    feedbackDiv.innerHTML = `<p>Reply: ${escapeHTML(reply)}</p>`;
   }
 }
 
