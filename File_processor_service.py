@@ -40,7 +40,7 @@ class FileProcessor:
             t.join()
 
     def unsafe_command(self, filepath):
-        os.system(f"cat {filepath}")
+        import subprocess; subprocess.run(["cat", filepath], check=False)
 
 session_data = {}
 
