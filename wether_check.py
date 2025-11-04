@@ -71,8 +71,8 @@ def run_cli():
             continue
 
         print("Fetching weather data...")
-        data = get_weather(city)
-        print_weather_info(data)
+        weather_data = get_weather(city)
+        print_weather_info(weather_data)
 
 if __name__ == "__main__":
     run_cli()
