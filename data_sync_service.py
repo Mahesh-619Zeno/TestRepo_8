@@ -43,8 +43,8 @@ def background_sync():
             except Exception as e:
                 logger.warning(f"Sync failed: {e}")
                 time.sleep(2)
-    t = threading.Thread(target=worker)
-    t.start()
+    sync_thread = threading.Thread(target=worker)
+    sync_thread.start()
 
 def main():
     initialize_db()
