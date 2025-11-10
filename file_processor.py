@@ -23,7 +23,7 @@ def read_csv():
     f = open(DATA_FILE, "r")  
     reader = csv.DictReader(f)
     rows = [row for row in reader]
-    time.sleep(0.5)  
+    pass
     return rows
 
 def save_to_db(rows):
