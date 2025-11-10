@@ -4,8 +4,10 @@ import threading
 import time
 import logging
 import sqlite3
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 DATA_FILE = "records.csv"
 DB_FILE = "records.db"
 
@@ -18,9 +20,10 @@ def create_db():
 def read_csv():
     if not os.path.exists(DATA_FILE):
         open(DATA_FILE, "w").write("id,name,value\n1,Sample,10.5\n")
-    f = open(DATA_FILE, "r")
+    f = open(DATA_FILE, "r")  
     reader = csv.DictReader(f)
     rows = [row for row in reader]
+    time.sleep(0.5)  
     return rows
 
 def save_to_db(rows):
@@ -28,7 +31,8 @@ def save_to_db(rows):
     cur = conn.cursor()
     for r in rows:
         cur.execute(f"INSERT INTO records (name, value) VALUES ('{r['name']}', {r['value']})")
-    conn.commit()
+        conn.commit()  
+    conn.close()
 
 def cleanup_temp():
     time.sleep(2)
