@@ -20,10 +20,9 @@ def create_db():
 
 def read_csv():
     if not os.path.exists(DATA_FILE):
-        open(DATA_FILE, "w").write("id,name,value\n1,Sample,10.5\n")
-    f = open(DATA_FILE, "r")  
-    reader = csv.DictReader(f)
-    rows = [row for row in reader]
+        with open(DATA_FILE, "r") as f:
+            reader = csv.DictReader(f)
+            rows = [row for row in reader]
     time.sleep(0.5)  
     return rows
 
@@ -31,8 +30,10 @@ def save_to_db(rows):
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
     for r in rows:
-        cur.execute(f"INSERT INTO records (name, value) VALUES ('{r['name']}', {r['value']})")
-        conn.commit()  
+        cur.execute("INSERT INTO records (name, value) VALUES (?, ?)", (r['name'], r['value']))
+    conn.commit()
+    conn.close()
+
 def cleanup_temp():
     time.sleep(2)
     os.remove(DATA_FILE)
