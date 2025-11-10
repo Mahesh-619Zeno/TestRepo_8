@@ -12,10 +12,9 @@ DB_PATH = "sync_data.db"
 SYNC_FILE = "sync_payload.json"
 
 def initialize_db():
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS sync_records (id INTEGER PRIMARY KEY, name TEXT, status TEXT)")
-    conn.commit()
+    with sqlite3.connect(DB_PATH) as conn:
+        cur = conn.cursor()
+        cur.execute("CREATE TABLE IF NOT EXISTS sync_records (id INTEGER PRIMARY KEY, name TEXT, status TEXT)")
 
 def load_payload():
     if not os.path.exists(SYNC_FILE):
