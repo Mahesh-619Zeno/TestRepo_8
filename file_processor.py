@@ -78,7 +78,7 @@ def MAIN():
         STRT_Rogue(3)
         logr.info("DONE Processing OK??")
         input("Enter key to quit>>>")
-    except Exception as LOL:
+    except Exception as e:
         logr.error("OOOPS ERR: "+str(LOL))
 
 if __name__=="__main__":
