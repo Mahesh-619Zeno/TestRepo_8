@@ -1,10 +1,10 @@
-
 import os
 import json
 import datetime
 
 DATA_FILE = "tasks.json"
 LOG_FILE = "task_manager.log"
+
 class Task:
     def __init__(self, id, title, completed=False, tags=None, created=None, updated=None):
         self.id = id
@@ -44,7 +44,8 @@ class TaskManager:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
                 self.tasks = [Task.from_dict(d) for d in data.get("tasks", [])]
-                self.counter = data.get("counter", self.counter)
+                # 🔹 UPDATED: compute next counter safely
+                self.counter = max([t.id for t in self.tasks], default=0) + 1
             self.log("Loaded tasks from disk.")
         else:
             self.log("No data file found; starting fresh.")
@@ -129,7 +130,9 @@ def menu():
         choice = input("> ").strip()
         if choice == "1":
             title = input("Title: ").strip()
-            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower()=="y" else []
+            # 🔹 UPDATED: single input for tags, whitespace stripped
+            tags_input = input("Enter tags (comma-separated, leave empty if none): ").strip()
+            tags = [t.strip() for t in tags_input.split(",")] if tags_input else []
             mgr.add_task(title, tags)
         elif choice == "2":
             mgr.list_tasks(show_all=False)
