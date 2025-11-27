@@ -58,9 +58,28 @@ class TaskManager:
 
 
     def save(self):
-        with open(DATA_FILE, "w") as f:
-            json.dump({"tasks": [t.to_dict() for t in self.tasks], "counter": self.counter}, f, indent=2)
-        self.log("Saved tasks to disk.")
+        temp_file = DATA_FILE + ".tmp"
+
+        try:
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "tasks": [t.to_dict() for t in self.tasks],
+                        "counter": self.counter,
+                    },
+                    f,
+                    indent=2
+                )
+
+            os.replace(temp_file, DATA_FILE)
+            self.log(f"Saved {len(self.tasks)} tasks to disk.")
+
+        except Exception as e:
+            # If writing fails, remove the temp file
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            self.log(f"ERROR saving tasks: {e}")
+
 
     def log(self, message):
         with open(LOG_FILE, "a") as f:
