@@ -40,14 +40,22 @@ class TaskManager:
         self.load()
 
     def load(self):
-        if os.path.exists(DATA_FILE):
+        if not os.path.exists(DATA_FILE):
+            self.log("No data file found; starting fresh.")
+            return
+        try:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
-                self.tasks = [Task.from_dict(d) for d in data.get("tasks", [])]
-                self.counter = data.get("counter", self.counter)
-            self.log("Loaded tasks from disk.")
-        else:
-            self.log("No data file found; starting fresh.")
+            tasks_data = data.get("tasks", [])
+            self.counter = int(data.get("counter", self.counter))
+            self.tasks = [Task.from_dict(d) for d in tasks_data]
+            self.log(f"Loaded {len(self.tasks)} tasks from disk.")
+
+        except (json.JSONDecodeError, ValueError, TypeError) as e:
+            self.tasks = []
+            self.counter = 1
+            self.log(f"ERROR loading tasks: {e}. Starting with empty task list.")
+
 
     def save(self):
         with open(DATA_FILE, "w") as f:
