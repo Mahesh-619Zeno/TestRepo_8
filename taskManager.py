@@ -1,10 +1,10 @@
-
 import os
 import json
 import datetime
 
 DATA_FILE = "tasks.json"
 LOG_FILE = "task_manager.log"
+
 class Task:
     def __init__(self, id, title, completed=False, tags=None, created=None, updated=None):
         self.id = id
@@ -26,12 +26,16 @@ class Task:
 
     @staticmethod
     def from_dict(d):
-        return Task(d["id"], d["title"], d["completed"], d["tags"], d["created"], d["updated"])
+        return Task(
+            d["id"], d["title"], d["completed"],
+            d["tags"], d["created"], d["updated"]
+        )
 
     def __str__(self):
         status = "✅" if self.completed else "❌"
         tags = ",".join(self.tags)
         return f"[{self.id}] {status} {self.title} (tags: {tags})"
+
 
 class TaskManager:
     def __init__(self):
@@ -50,16 +54,18 @@ class TaskManager:
             self.counter = int(data.get("counter", self.counter))
             self.tasks = [Task.from_dict(d) for d in tasks_data]
             self.log(f"Loaded {len(self.tasks)} tasks from disk.")
-
         except (json.JSONDecodeError, ValueError, TypeError) as e:
             self.tasks = []
             self.counter = 1
             self.log(f"ERROR loading tasks: {e}. Starting with empty task list.")
 
-
     def save(self):
         with open(DATA_FILE, "w") as f:
-            json.dump({"tasks": [t.to_dict() for t in self.tasks], "counter": self.counter}, f, indent=2)
+            json.dump(
+                {"tasks": [t.to_dict() for t in self.tasks], "counter": self.counter},
+                f,
+                indent=2
+            )
         self.log("Saved tasks to disk.")
 
     def log(self, message):
@@ -122,6 +128,62 @@ class TaskManager:
                 return
         print("Task not found.")
 
+    # -----------------------------
+    # NEW FEATURE: EDIT TASK
+    # -----------------------------
+    def edit_task(self, id, new_title):
+        for t in self.tasks:
+            if t.id == id:
+                old_title = t.title
+                t.title = new_title
+                t.updated = datetime.datetime.now().isoformat()
+                self.save()
+                self.log(f"Edited task {id}: '{old_title}' → '{new_title}'")
+                print("Updated:", t)
+                return
+        print("Task not found.")
+
+    # -----------------------------
+    # NEW FEATURE: EXPORT TASKS TO TXT
+    # -----------------------------
+    def export_txt(self, filename="tasks_export.txt"):
+        with open(filename, "w") as f:
+            for t in self.tasks:
+                status = "DONE" if t.completed else "TODO"
+                line = f"{t.id}. [{status}] {t.title} (tags: {', '.join(t.tags)})\n"
+                f.write(line)
+        self.log(f"Exported tasks to {filename}")
+        print(f"Exported tasks to {filename}")
+
+    # -----------------------------
+    # NEW FEATURE: STATS
+    # -----------------------------
+    def stats(self):
+        total = len(self.tasks)
+        completed = len([t for t in self.tasks if t.completed])
+        pending = total - completed
+        percent = (completed / total * 100) if total else 0
+
+        tag_count = {}
+        for t in self.tasks:
+            for tag in t.tags:
+                tag_count[tag] = tag_count.get(tag, 0) + 1
+
+        print("\n=== Task Stats ===")
+        print(f"Total tasks: {total}")
+        print(f"Completed: {completed}")
+        print(f"Pending: {pending}")
+        print(f"Completion: {percent:.1f}%")
+
+        if tag_count:
+            print("\nTags:")
+            for tag, count in tag_count.items():
+                print(f"  #{tag}: {count}")
+        else:
+            print("No tags defined.")
+        print("=================\n")
+
+
 def menu():
     mgr = TaskManager()
     while True:
@@ -134,10 +196,15 @@ def menu():
         print("6) Search Tasks")
         print("7) Tag Task")
         print("8) Exit")
+        print("9) Edit Task")
+        print("10) Export Tasks to TXT")
+        print("11) Show Stats")
+        
         choice = input("> ").strip()
+        
         if choice == "1":
             title = input("Title: ").strip()
-            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower()=="y" else []
+            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower() == "y" else []
             mgr.add_task(title, tags)
         elif choice == "2":
             mgr.list_tasks(show_all=False)
@@ -154,8 +221,15 @@ def menu():
         elif choice == "8":
             print("Bye!")
             break
+        elif choice == "9":
+            mgr.edit_task(int(input("ID: ")), input("New title: "))
+        elif choice == "10":
+            mgr.export_txt()
+        elif choice == "11":
+            mgr.stats()
         else:
             print("Invalid choice.")
+
 
 if __name__ == "__main__":
     menu()
