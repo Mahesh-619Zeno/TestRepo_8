@@ -1,10 +1,10 @@
-
 import os
 import json
 import datetime
 
 DATA_FILE = "tasks.json"
 LOG_FILE = "task_manager.log"
+
 class Task:
     def __init__(self, id, title, completed=False, tags=None, created=None, updated=None):
         self.id = id
@@ -26,12 +26,16 @@ class Task:
 
     @staticmethod
     def from_dict(d):
-        return Task(d["id"], d["title"], d["completed"], d["tags"], d["created"], d["updated"])
+        return Task(
+            d["id"], d["title"], d["completed"],
+            d["tags"], d["created"], d["updated"]
+        )
 
     def __str__(self):
         status = "✅" if self.completed else "❌"
         tags = ",".join(self.tags)
         return f"[{self.id}] {status} {self.title} (tags: {tags})"
+
 
 class TaskManager:
     def __init__(self):
@@ -43,23 +47,38 @@ class TaskManager:
         if not os.path.exists(DATA_FILE):
             self.log("No data file found; starting fresh.")
             return
+
         try:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
+
             tasks_data = data.get("tasks", [])
             self.counter = int(data.get("counter", self.counter))
             self.tasks = [Task.from_dict(d) for d in tasks_data]
-            self.log(f"Loaded {len(self.tasks)} tasks from disk.")
+
+            # --- Small added code: summary when loading ---
+            completed = sum(1 for t in self.tasks if t.completed)
+            pending = len(self.tasks) - completed
+            summary = (
+                f"Loaded {len(self.tasks)} tasks "
+                f"({pending} pending, {completed} completed)."
+            )
+            self.log(summary)
+            print(summary)
+            # ------------------------------------------------
 
         except (json.JSONDecodeError, ValueError, TypeError) as e:
             self.tasks = []
             self.counter = 1
             self.log(f"ERROR loading tasks: {e}. Starting with empty task list.")
 
-
     def save(self):
         with open(DATA_FILE, "w") as f:
-            json.dump({"tasks": [t.to_dict() for t in self.tasks], "counter": self.counter}, f, indent=2)
+            json.dump(
+                {"tasks": [t.to_dict() for t in self.tasks], "counter": self.counter},
+                f,
+                indent=2
+            )
         self.log("Saved tasks to disk.")
 
     def log(self, message):
@@ -122,6 +141,7 @@ class TaskManager:
                 return
         print("Task not found.")
 
+
 def menu():
     mgr = TaskManager()
     while True:
@@ -134,10 +154,12 @@ def menu():
         print("6) Search Tasks")
         print("7) Tag Task")
         print("8) Exit")
+
         choice = input("> ").strip()
+
         if choice == "1":
             title = input("Title: ").strip()
-            tags = input("Tags (comma): ").strip().split(",") if input("Add tags? (y/n): ").strip().lower()=="y" else []
+            tags = input("Tags (comma): ").split(",") if input("Add tags? (y/n): ").lower() == "y" else []
             mgr.add_task(title, tags)
         elif choice == "2":
             mgr.list_tasks(show_all=False)
@@ -156,6 +178,7 @@ def menu():
             break
         else:
             print("Invalid choice.")
+
 
 if __name__ == "__main__":
     menu()
