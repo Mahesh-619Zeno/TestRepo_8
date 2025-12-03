@@ -11,7 +11,8 @@ def get_audio_embedding(path):
     try:
         audio, _ = librosa.core.load(path, sr=32000, mono=True)
         audio = audio[None, :]
-        at = AudioTagging(checkpoint_path=None, device='cuda')
+        device = os.getenv("INFERENCE_DEVICE", "cpu")
+        at = AudioTagging(checkpoint_path=None, device=device)
         _, embedding = at.inference(audio)
         embedding = embedding/np.linalg.norm(embedding)
         embedding = embedding.tolist()[0]
