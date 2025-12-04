@@ -193,8 +193,11 @@ def menu():
         try:
             if choice == "1":
                 title = input("Title: ").strip()
-                tags = input("Tags (comma): ").split(",")
-                mgr.add_task(title, tags)
+                if title:
+                    tags = input("Tags (comma): ").split(",")
+                    mgr.add_task(title, tags)
+                else:
+                    print("Error: Task title cannot be empty.")
 
             elif choice == "2":
                 mgr.list_tasks(show_all=False)
