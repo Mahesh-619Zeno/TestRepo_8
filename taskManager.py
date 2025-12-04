@@ -1,17 +1,41 @@
 from __future__ import annotations
-from pathlib import Path
+
 import json
 import datetime
-from typing import List, Optional
+from pathlib import Path
+from typing import List, Optional, Dict, Any
+
 
 DATA_FILE = Path("tasks.json")
 LOG_FILE = Path("task_manager.log")
 
 
+# ----------------------------
+# Helpers
+# ----------------------------
 def now_iso() -> str:
     return datetime.datetime.now().isoformat()
 
 
+def safe_read_json(path: Path) -> Dict[str, Any]:
+    if not path.exists() or path.read_text().strip() == "":
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except json.JSONDecodeError:
+        return {}  # corrupted file → ignore
+
+
+def append_log(message: str):
+    LOG_FILE.write_text(
+        (LOG_FILE.read_text() if LOG_FILE.exists() else "")
+        + f"{now_iso()} {message}\n"
+    )
+
+
+# ----------------------------
+# Task Model
+# ----------------------------
 class Task:
     def __init__(
         self,
@@ -29,7 +53,7 @@ class Task:
         self.created = created or now_iso()
         self.updated = updated or self.created
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
             "title": self.title,
@@ -40,7 +64,7 @@ class Task:
         }
 
     @staticmethod
-    def from_dict(d: dict) -> "Task":
+    def from_dict(d: Dict[str, Any]) -> "Task":
         return Task(
             id=d["id"],
             title=d["title"],
@@ -52,10 +76,13 @@ class Task:
 
     def __str__(self) -> str:
         status = "✅" if self.completed else "❌"
-        tag_str = ",".join(self.tags)
-        return f"[{self.id}] {status} {self.title} (tags: {tag_str})"
+        tags = ",".join(self.tags)
+        return f"[{self.id}] {status} {self.title} (tags: {tags})"
 
 
+# ----------------------------
+# Task Manager
+# ----------------------------
 class TaskManager:
     def __init__(self):
         self.tasks: List[Task] = []
@@ -66,42 +93,19 @@ class TaskManager:
     # Persistence
     # ------------------------
     def load(self):
-        if not DATA_FILE.exists():
-            self.log("No data file found; starting fresh.")
-            return
-
-        try:
-            data = json.loads(DATA_FILE.read_text())
-            self.counter = int(data.get("counter", 1))
-            self.tasks = [Task.from_dict(t) for t in data.get("tasks", [])]
-
-            # Optional: keep tasks sorted by ID
-            self.tasks.sort(key=lambda t: t.id)
-
-            self.log(f"Loaded {len(self.tasks)} tasks.")
-        except Exception as e:
-            self.tasks = []
-            self.counter = 1
-            self.log(f"ERROR loading tasks: {e}")
+        data = safe_read_json(DATA_FILE)
+        self.counter = int(data.get("counter", 1))
+        self.tasks = [Task.from_dict(t) for t in data.get("tasks", [])]
+        self.tasks.sort(key=lambda x: x.id)
+        append_log(f"Loaded {len(self.tasks)} tasks.")
 
     def save(self):
-        DATA_FILE.write_text(
-            json.dumps(
-                {
-                    "tasks": [t.to_dict() for t in self.tasks],
-                    "counter": self.counter,
-                },
-                indent=2,
-            )
-        )
-        self.log("Saved tasks to disk.")
-
-    def log(self, message: str):
-        LOG_FILE.write_text(
-            LOG_FILE.read_text() + f"{now_iso()} {message}\n"
-            if LOG_FILE.exists()
-            else f"{now_iso()} {message}\n"
-        )
+        data = {
+            "tasks": [t.to_dict() for t in self.tasks],
+            "counter": self.counter,
+        }
+        DATA_FILE.write_text(json.dumps(data, indent=2))
+        append_log("Saved tasks.")
 
     # ------------------------
     # Helpers
@@ -110,15 +114,14 @@ class TaskManager:
         return next((t for t in self.tasks if t.id == id), None)
 
     # ------------------------
-    # CRUD / Actions
+    # CRUD Operations
     # ------------------------
     def add_task(self, title: str, tags: List[str]):
-        tags = [t.strip() for t in tags if t.strip()]
-        task = Task(self.counter, title, False, tags)
+        clean_tags = [t.strip() for t in tags if t.strip()]
+        task = Task(self.counter, title, False, clean_tags)
         self.tasks.append(task)
         self.counter += 1
         self.save()
-        self.log(f"Added task {task.id}: {title}")
         print("Task added:", task)
 
     def list_tasks(self, show_all: bool = False):
@@ -133,11 +136,9 @@ class TaskManager:
         if not task:
             print("Task not found.")
             return
-
         task.completed = True
         task.updated = now_iso()
         self.save()
-        self.log(f"Completed task {id}")
         print("Completed:", task)
 
     def delete_task(self, id: int):
@@ -145,16 +146,13 @@ class TaskManager:
         if not task:
             print("Task not found.")
             return
-
         self.tasks.remove(task)
         self.save()
-        self.log(f"Deleted task {id}")
         print("Deleted:", task)
 
     def search(self, term: str):
         term = term.lower().strip()
         found = [t for t in self.tasks if term in t.title.lower()]
-
         if not found:
             print(f"No tasks found matching '{term}'.")
         else:
@@ -166,60 +164,67 @@ class TaskManager:
         if not task:
             print("Task not found.")
             return
-
         cleaned = [t.strip() for t in tags if t.strip()]
         task.tags = sorted(set(task.tags + cleaned))
         task.updated = now_iso()
         self.save()
-        self.log(f"Tagged task {id} with {cleaned}")
         print("Updated:", task)
 
 
-# ------------------------
-# Menu
-# ------------------------
+# ----------------------------
+# Menu System
+# ----------------------------
 def menu():
     mgr = TaskManager()
-
-    options = {
-        "1": lambda: mgr.add_task(
-            input("Title: ").strip(),
-            input("Tags (comma): ").split(",") if input("Add tags? (y/n): ").lower() == "y" else [],
-        ),
-        "2": lambda: mgr.list_tasks(show_all=False),
-        "3": lambda: mgr.list_tasks(show_all=True),
-        "4": lambda: mgr.complete_task(int(input("ID: "))),
-        "5": lambda: mgr.delete_task(int(input("ID: "))),
-        "6": lambda: mgr.search(input("Search term: ")),
-        "7": lambda: mgr.tag_task(
-            int(input("ID: ")), input("Tags (comma): ").split(",")
-        ),
-    }
 
     while True:
         print("\n== Task Manager ==")
         print("1) Add Task")
-        print("2) List Tasks (uncompleted)")
-        print("3) List All Tasks")
+        print("2) List Uncompleted")
+        print("3) List All")
         print("4) Complete Task")
         print("5) Delete Task")
-        print("6) Search Tasks")
-        print("7) Tag Task")
+        print("6) Search")
+        print("7) Add Tags")
         print("8) Exit")
 
         choice = input("> ").strip()
-        if choice == "8":
-            print("Bye!")
-            break
 
-        action = options.get(choice)
-        if action:
-            try:
-                action()
-            except Exception as e:
-                print("Error:", e)
-        else:
-            print("Invalid choice.")
+        try:
+            if choice == "1":
+                title = input("Title: ").strip()
+                tags = input("Tags (comma): ").split(",")
+                mgr.add_task(title, tags)
+
+            elif choice == "2":
+                mgr.list_tasks(show_all=False)
+
+            elif choice == "3":
+                mgr.list_tasks(show_all=True)
+
+            elif choice == "4":
+                mgr.complete_task(int(input("ID: ")))
+
+            elif choice == "5":
+                mgr.delete_task(int(input("ID: ")))
+
+            elif choice == "6":
+                mgr.search(input("Search term: "))
+
+            elif choice == "7":
+                id = int(input("ID: "))
+                tags = input("Tags (comma): ").split(",")
+                mgr.tag_task(id, tags)
+
+            elif choice == "8":
+                print("Bye!")
+                break
+
+            else:
+                print("Invalid choice.")
+
+        except Exception as e:
+            print("Error:", e)
 
 
 if __name__ == "__main__":
