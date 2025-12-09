@@ -1,226 +1,240 @@
-from __future__ import annotations
-from pathlib import Path
+import os
+import sys
+import math
 import json
+import time
+import uuid
+import random
+import logging
 import datetime
-from typing import List, Optional
+import threading
+import itertools
+import functools
+from dataclasses import dataclass, field
+from typing import List, Dict, Callable, Optional
 
-DATA_FILE = Path("tasks.json")
-LOG_FILE = Path("task_manager.log")
+# -----------------------------
+# Logging Setup
+# -----------------------------
+logging.basicConfig(
+    level=logging.DEBUG,
+    format="[%(asctime)s] %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S"
+)
 
+logger = logging.getLogger(__name__)
 
-def now_iso() -> str:
-    return datetime.datetime.now().isoformat()
+# -----------------------------
+# Data Models
+# -----------------------------
 
-
+@dataclass
 class Task:
-    def __init__(
-        self,
-        id: int,
-        title: str,
-        completed: bool = False,
-        tags: Optional[List[str]] = None,
-        created: Optional[str] = None,
-        updated: Optional[str] = None,
-    ):
-        self.id = id
-        self.title = title
-        self.completed = completed
-        self.tags = tags or []
-        self.created = created or now_iso()
-        self.updated = updated or self.created
+    id: str
+    title: str
+    completed: bool = False
+    created_at: datetime.datetime = field(default_factory=datetime.datetime.utcnow)
 
-    def to_dict(self) -> dict:
+    def complete(self):
+        logger.debug(f"Completing task {self.id}")
+        self.completed = True
+
+    def serialize(self) -> Dict:
+        logger.debug(f"Serializing task {self.id}")
         return {
             "id": self.id,
             "title": self.title,
             "completed": self.completed,
-            "tags": self.tags,
-            "created": self.created,
-            "updated": self.updated,
+            "created_at": self.created_at.isoformat()
         }
 
-    @staticmethod
-    def from_dict(d: dict) -> "Task":
-        return Task(
-            id=d["id"],
-            title=d["title"],
-            completed=d.get("completed", False),
-            tags=d.get("tags", []),
-            created=d.get("created"),
-            updated=d.get("updated"),
-        )
 
-    def __str__(self) -> str:
-        status = "✅" if self.completed else "❌"
-        tag_str = ",".join(self.tags)
-        return f"[{self.id}] {status} {self.title} (tags: {tag_str})"
+@dataclass
+class User:
+    id: str
+    username: str
+    tasks: List[Task] = field(default_factory=list)
 
-
-class TaskManager:
-    def __init__(self):
-        self.tasks: List[Task] = []
-        self.counter: int = 1
-        self.load()
-
-    # ------------------------
-    # Persistence
-    # ------------------------
-    def load(self):
-        if not DATA_FILE.exists():
-            self.log("No data file found; starting fresh.")
-            return
-
-        try:
-            data = json.loads(DATA_FILE.read_text())
-            self.counter = int(data.get("counter", 1))
-            self.tasks = [Task.from_dict(t) for t in data.get("tasks", [])]
-
-            # Optional: keep tasks sorted by ID
-            self.tasks.sort(key=lambda t: t.id)
-
-            self.log(f"Loaded {len(self.tasks)} tasks.")
-        except Exception as e:
-            self.tasks = []
-            self.counter = 1
-            self.log(f"ERROR loading tasks: {e}")
-
-    def save(self):
-        DATA_FILE.write_text(
-            json.dumps(
-                {
-                    "tasks": [t.to_dict() for t in self.tasks],
-                    "counter": self.counter,
-                },
-                indent=2,
-            )
-        )
-        self.log("Saved tasks to disk.")
-
-    def log(self, message: str):
-        LOG_FILE.write_text(
-            LOG_FILE.read_text() + f"{now_iso()} {message}\n"
-            if LOG_FILE.exists()
-            else f"{now_iso()} {message}\n"
-        )
-
-    # ------------------------
-    # Helpers
-    # ------------------------
-    def find_task(self, id: int) -> Optional[Task]:
-        return next((t for t in self.tasks if t.id == id), None)
-
-    # ------------------------
-    # CRUD / Actions
-    # ------------------------
-    def add_task(self, title: str, tags: List[str]):
-        tags = [t.strip() for t in tags if t.strip()]
-        task = Task(self.counter, title, False, tags)
+    def add_task(self, title: str) -> Task:
+        logger.debug(f"User '{self.username}' adding task: {title}")
+        task = Task(id=str(uuid.uuid4()), title=title)
         self.tasks.append(task)
-        self.counter += 1
-        self.save()
-        self.log(f"Added task {task.id}: {title}")
-        print("Task added:", task)
+        return task
 
-    def list_tasks(self, show_all: bool = False):
-        filtered = self.tasks if show_all else [t for t in self.tasks if not t.completed]
-        if not filtered:
-            print("🗒️ No tasks.")
-        for t in filtered:
-            print(t)
+    def serialize(self) -> Dict:
+        logger.debug(f"Serializing user {self.username}")
+        return {
+            "id": self.id,
+            "username": self.username,
+            "tasks": [t.serialize() for t in self.tasks]
+        }
 
-    def complete_task(self, id: int):
-        task = self.find_task(id)
-        if not task:
-            print("Task not found.")
-            return
+# -----------------------------
+# Utility Functions
+# -----------------------------
 
-        task.completed = True
-        task.updated = now_iso()
-        self.save()
-        self.log(f"Completed task {id}")
-        print("Completed:", task)
-
-    def delete_task(self, id: int):
-        task = self.find_task(id)
-        if not task:
-            print("Task not found.")
-            return
-
-        self.tasks.remove(task)
-        self.save()
-        self.log(f"Deleted task {id}")
-        print("Deleted:", task)
-
-    def search(self, term: str):
-        term = term.lower().strip()
-        found = [t for t in self.tasks if term in t.title.lower()]
-
-        if not found:
-            print(f"No tasks found matching '{term}'.")
-        else:
-            for t in found:
-                print(t)
-
-    def tag_task(self, id: int, tags: List[str]):
-        task = self.find_task(id)
-        if not task:
-            print("Task not found.")
-            return
-
-        cleaned = [t.strip() for t in tags if t.strip()]
-        task.tags = sorted(set(task.tags + cleaned))
-        task.updated = now_iso()
-        self.save()
-        self.log(f"Tagged task {id} with {cleaned}")
-        print("Updated:", task)
+def load_json_file(path: str) -> Dict:
+    logger.debug(f"Loading JSON file: {path}")
+    if not os.path.exists(path):
+        logger.warning(f"File not found: {path}. Returning empty dict.")
+        return {}
+    with open(path, "r") as f:
+        return json.load(f)
 
 
-# ------------------------
-# Menu
-# ------------------------
-def menu():
-    mgr = TaskManager()
+def save_json_file(path: str, data: Dict):
+    logger.debug(f"Saving JSON data to file: {path}")
+    with open(path, "w") as f:
+        json.dump(data, f, indent=4)
 
-    options = {
-        "1": lambda: mgr.add_task(
-            input("Title: ").strip(),
-            input("Tags (comma): ").split(",") if input("Add tags? (y/n): ").lower() == "y" else [],
-        ),
-        "2": lambda: mgr.list_tasks(show_all=False),
-        "3": lambda: mgr.list_tasks(show_all=True),
-        "4": lambda: mgr.complete_task(int(input("ID: "))),
-        "5": lambda: mgr.delete_task(int(input("ID: "))),
-        "6": lambda: mgr.search(input("Search term: ")),
-        "7": lambda: mgr.tag_task(
-            int(input("ID: ")), input("Tags (comma): ").split(",")
-        ),
+
+def generate_random_username() -> str:
+    adjectives = ["fast", "silent", "happy", "wild", "lucky"]
+    animals = ["lion", "tiger", "cat", "eagle", "bear"]
+    username = random.choice(adjectives) + "_" + random.choice(animals)
+    logger.debug(f"Generated username: {username}")
+    return username
+
+
+def slow_operation(seconds: int):
+    logger.debug(f"Starting slow operation for {seconds} seconds")
+    time.sleep(seconds)
+    logger.debug("Slow operation finished")
+
+
+def threaded_worker(task_func: Callable, *args, **kwargs):
+    logger.debug("Starting threaded worker")
+    thread = threading.Thread(target=task_func, args=args, kwargs=kwargs)
+    thread.start()
+    return thread
+
+
+def calculate_statistics(numbers: List[int]) -> Dict:
+    logger.debug("Calculating statistics")
+    if not numbers:
+        return {"mean": None, "min": None, "max": None}
+    return {
+        "mean": sum(numbers) / len(numbers),
+        "min": min(numbers),
+        "max": max(numbers)
     }
 
-    while True:
-        print("\n== Task Manager ==")
-        print("1) Add Task")
-        print("2) List Tasks (uncompleted)")
-        print("3) List All Tasks")
-        print("4) Complete Task")
-        print("5) Delete Task")
-        print("6) Search Tasks")
-        print("7) Tag Task")
-        print("8) Exit")
+# -----------------------------
+# Task Manager Class
+# -----------------------------
 
-        choice = input("> ").strip()
-        if choice == "8":
-            print("Bye!")
+class TaskManager:
+    def __init__(self, storage_path="tasks.json"):
+        logger.debug("Initializing TaskManager")
+        self.storage_path = storage_path
+        self.users: Dict[str, User] = {}
+        self.load()
+
+    def create_user(self, username: Optional[str] = None) -> User:
+        username = username or generate_random_username()
+        user = User(id=str(uuid.uuid4()), username=username)
+        logger.info(f"Created user: {username}")
+        self.users[user.id] = user
+        return user
+
+    def find_user(self, user_id: str) -> Optional[User]:
+        logger.debug(f"Finding user with ID: {user_id}")
+        return self.users.get(user_id)
+
+    def add_task_to_user(self, user_id: str, title: str) -> Optional[Task]:
+        user = self.find_user(user_id)
+        if not user:
+            logger.error("User not found.")
+            return None
+        task = user.add_task(title)
+        logger.info(f"Added task '{title}' to user {user.username}")
+        return task
+
+    def list_all_tasks(self) -> List[Task]:
+        logger.debug("Listing all tasks")
+        return list(itertools.chain.from_iterable(u.tasks for u in self.users.values()))
+
+    def save(self):
+        logger.debug("Saving all user data")
+        data = {uid: user.serialize() for uid, user in self.users.items()}
+        save_json_file(self.storage_path, data)
+
+    def load(self):
+        logger.debug("Loading user data")
+        data = load_json_file(self.storage_path)
+        for uid, udata in data.items():
+            user = User(id=udata["id"], username=udata["username"])
+            for tdata in udata.get("tasks", []):
+                task = Task(
+                    id=tdata["id"],
+                    title=tdata["title"],
+                    completed=tdata["completed"],
+                    created_at=datetime.datetime.fromisoformat(tdata["created_at"])
+                )
+                user.tasks.append(task)
+            self.users[uid] = user
+
+# -----------------------------
+# CLI Interface
+# -----------------------------
+
+def print_menu():
+    print("\n=== Task Manager CLI ===")
+    print("1. Create User")
+    print("2. Add Task to User")
+    print("3. List All Tasks")
+    print("4. Save")
+    print("5. Run Slow Operation (threaded)")
+    print("6. Number Stats")
+    print("0. Exit")
+
+
+def main():
+    manager = TaskManager()
+
+    while True:
+        print_menu()
+        choice = input("Enter choice: ").strip()
+
+        if choice == "1":
+            name = input("Enter username (leave blank for random): ").strip()
+            user = manager.create_user(name or None)
+            print("Created user:", user.username)
+
+        elif choice == "2":
+            user_id = input("Enter user ID: ").strip()
+            title = input("Enter task title: ").strip()
+            task = manager.add_task_to_user(user_id, title)
+            if task:
+                print("Task added:", task.title)
+
+        elif choice == "3":
+            tasks = manager.list_all_tasks()
+            print("\n--- All Tasks ---")
+            for t in tasks:
+                status = "✔" if t.completed else "✘"
+                print(f"{t.id} | {t.title} | {status}")
+
+        elif choice == "4":
+            manager.save()
+            print("Data saved.")
+
+        elif choice == "5":
+            t = threaded_worker(slow_operation, 3)
+            print("Slow operation started in background.")
+
+        elif choice == "6":
+            nums = list(map(int, input("Enter numbers separated by spaces: ").split()))
+            stats = calculate_statistics(nums)
+            print("Stats:", stats)
+
+        elif choice == "0":
+            print("Exiting...")
+            manager.save()
             break
 
-        action = options.get(choice)
-        if action:
-            try:
-                action()
-            except Exception as e:
-                print("Error:", e)
         else:
             print("Invalid choice.")
 
-
 if __name__ == "__main__":
-    menu()
+    main()
