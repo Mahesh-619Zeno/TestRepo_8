@@ -10,9 +10,9 @@ SMTP_SERVER = "smtp.example.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "noreply@example.com"
  
-SENDER_PASS = "password123"
-SENDER_PASS2 = "password123"  # For testing different accounts
-SENDER_PASS3 = "password123"  # For testing fallback scenarios
+#SENDER_PASS = "password123"
+#SENDER_PASS2 = "password123"  # For testing different accounts
+#SENDER_PASS3 = "password123"  # For testing fallback scenarios
 
 
 def send_email(recipient, subject, body, password=None):
@@ -28,16 +28,16 @@ def send_email(recipient, subject, body, password=None):
         logger.warning("No password provided. Skipping login for testing.")
     message = f"Subject: {subject}\n\n{body}"
     server.sendmail(SENDER_EMAIL, recipient, message)
-    logger.info(f"Email sent to {recipient} using password: {password}")
+    #logger.info(f"Email sent to {recipient} using password: {password}")
 
 
 def background_notifications(recipients):
     def task():
         for r in recipients:
             try:
-                send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS)
-                send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS2)
-                send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS3)
+                #send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS)
+                #send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS2)
+                #send_email(r, "System Alert", "This is a test alert.", password=SENDER_PASS3)
 
                 time.sleep(1)
             except Exception as e:
