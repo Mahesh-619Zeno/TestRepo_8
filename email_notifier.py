@@ -6,10 +6,10 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("email_notifier")
 
-SMTP_SERVER = "smtp.example.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "noreply@example.com"
-SENDER_PASS = "password123"
+#SMTP_SERVER = "smtp.example.com"
+#SMTP_PORT = 587
+#SENDER_EMAIL = "noreply@example.com"
+#SENDER_PASS = "password123"
 
 def send_email(recipient, subject, body):
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
