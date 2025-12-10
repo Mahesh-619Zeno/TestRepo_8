@@ -4,7 +4,7 @@ import requests
 from datetime import datetime
 
 # Load environment variables
-API_KEY = os.getenv("WEATHER_API_KEY")
+API_KEY = os.getenv("WEATHER_API_KEY","").strip()
 BASE_URL = "http://api.openweathermap.org/data/2.5/weather"
 
 if not API_KEY:
