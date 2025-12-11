@@ -8,7 +8,7 @@ from datetime import datetime
 # Load Configuration from Environment
 # ------------------------------
 APP_ENV = os.getenv("APP_ENV", "dev")
-API_KEY = os.getenv("WEATHER_API_KEY")
+API_KEY = os.getenv("WEATHER_API_KEY", "").strip()
 ENABLE_LOGGING = os.getenv("ENABLE_LOGGING", "false").lower() == "true"
 DEFAULT_CITY = os.getenv("DEFAULT_CITY", "New York")
 
