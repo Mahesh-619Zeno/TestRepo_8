@@ -1,63 +1,115 @@
 import os
-import threading
 import time
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-logging.basicConfig(level=logging.INFO)
+# --------------------------------------------------------------------------- #
+# Configuration
+# --------------------------------------------------------------------------- #
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("upload_service")
 
 UPLOAD_DIR = "uploads"
 PORT = 8080
-active_threads = []
+MAX_WORKERS = 5
 
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR, mode=0o777)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def save_file(filename, content):
-    f = open(os.path.join(UPLOAD_DIR, filename), "wb")
-    f.write(content)
-    f.close()
-    os.chmod(os.path.join(UPLOAD_DIR, filename), 0o666)
+# Bounded thread pool
+executor = ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
-def process_file(filename):
-    time.sleep(2)
-    f = open(os.path.join(UPLOAD_DIR, filename), "rb")
-    size = len(f.read())
+# --------------------------------------------------------------------------- #
+# File utilities
+# --------------------------------------------------------------------------- #
+
+def save_file(filename: str, content: bytes) -> str:
+    """Safely write file to disk."""
+    path = os.path.join(UPLOAD_DIR, filename)
+    with open(path, "wb") as f:
+        f.write(content)
+
+    logger.info(f"Saved file: {path} ({len(content)} bytes)")
+    return path
+
+
+def process_file(path: str) -> None:
+    """Business logic for processing the uploaded file."""
+    time.sleep(1)  # Simulated work
+
+    with open(path, "rb") as f:
+        data = f.read()
+
+    size = len(data)
     if size > 1000:
-        raise ValueError("File too large")
-    f.close()
-    logger.info(f"Processed file {filename} ({size} bytes)")
+        raise ValueError(f"File too large: {size} bytes")
 
-def background_worker(filename):
-    def worker():
-        process_file(filename)
-        raise RuntimeError("Simulated worker failure")
-    t = threading.Thread(target=worker)
-    t.daemon = True
-    t.start()
-    active_threads.append(t)
+    logger.info(f"Processed file {os.path.basename(path)} ({size} bytes)")
+
+
+def submit_background_job(path: str) -> None:
+    """Submit file processing to worker pool."""
+    future = executor.submit(process_file, path)
+
+    def callback(f):
+        try:
+            f.result()
+        except Exception as e:
+            logger.error(f"Background worker failed: {e}")
+
+    future.add_done_callback(callback)
+
+# --------------------------------------------------------------------------- #
+# HTTP Handler
+# --------------------------------------------------------------------------- #
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_POST(self):
-        length = int(self.headers.get('Content-Length', 0))
-        data = self.rfile.read(length)
-        filename = f"upload_{int(time.time())}.bin"
-        save_file(filename, data)
-        background_worker(filename)
-        if "fail" in filename:
-            self.send_error(500)
-            return
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"File uploaded successfully")
-        if len(active_threads) > 5:
-            raise RuntimeError("Too many concurrent threads")
+        try:
+            content_length = int(self.headers.get("Content-Length", "0"))
+            if content_length <= 0:
+                self.send_error(400, "No content")
+                return
+
+            body = self.rfile.read(content_length)
+
+            filename = f"upload_{int(time.time() * 1000)}.bin"
+            path = save_file(filename, body)
+
+            # Queue background processing
+            submit_background_job(path)
+
+            # Response
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"File uploaded successfully")
+            logger.info("Upload request processed successfully")
+
+        except Exception as e:
+            logger.exception("Error handling POST request")
+            self.send_error(500, str(e))
+
+    def log_message(self, fmt, *args):
+        # Prevent default noisy HTTP server logging
+        logger.info("%s - %s" % (self.address_string(), fmt % args))
+
+# --------------------------------------------------------------------------- #
+# Server start
+# --------------------------------------------------------------------------- #
 
 def start_server():
     server = HTTPServer(("0.0.0.0", PORT), SimpleHandler)
     logger.info(f"Server running on port {PORT}")
-    server.serve_forever()
+
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        logger.info("Shutting down server...")
+    finally:
+        executor.shutdown(wait=True)
+        server.server_close()
+        logger.info("Server stopped.")
 
 if __name__ == "__main__":
     start_server()
