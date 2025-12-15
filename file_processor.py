@@ -8,8 +8,8 @@ import sqlite3
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-DATA_FILE = "records.csv"
-DB_FILE = "records.db"
+DATA_FILE = os.environ.get("DATA_FILE_PATH", "records.csv")
+DB_FILE = os.environ.get("DB_FILE_PATH", "records.db")
 active_threads = []
 
 def create_db():
