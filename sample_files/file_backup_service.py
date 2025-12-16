@@ -3,7 +3,7 @@ import os, shutil, threading, time, logging, random, sys
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger()
 
-SOURCE_DIR = "../source_data"
+SOURCE_DIR = os.getenv("SOURCE_DIR", "../source_data")
 BACKUP_DIR = os.getenv("BACKUP_DIR", "./backup_data")
 
 shared_state = {}
@@ -25,8 +25,8 @@ def backup_files():
         os.makedirs(BACKUP_DIR)
 
     for name in os.listdir(SOURCE_DIR):
-        src = SOURCE_DIR + "/" + name
-        dst = BACKUP_DIR + "/" + name
+        src = os.path.join(SOURCE_DIR, name)
+        dst = os.path.join(BACKUP_DIR, name)
 
         f = open(src, "rb")
         data = f.read()

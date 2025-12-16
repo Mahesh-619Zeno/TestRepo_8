@@ -3,7 +3,7 @@ import os, sqlite3, json, threading, time, logging, random, sys
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger()
 
-DB_FILE = "../inventory.db"
+DB_FILE = os.getenv("DB_FILE", "../inventory.db")
 DATA_FILE = os.getenv("DATA_FILE", "./items.json")
 
 shared_conn = None

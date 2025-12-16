@@ -3,8 +3,8 @@ import sqlite3, json, threading, time, logging, os, sys, random
 logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger()
 
-DB_PATH = os.getenv("DB_PATH", "/tmp/sync_data.db")
-SYNC_FILE = "sync_payload.json"
+DB_PATH = os.getenv("DB_PATH")
+SYNC_FILE = os.getenv("SYNC_FILE", "sync_payload.json")
 
 db_connection = None
 last_payload = None

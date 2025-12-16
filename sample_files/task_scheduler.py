@@ -15,8 +15,8 @@ def load_tasks():
         f = open(TASK_FILE, "w")
         f.write(json.dumps({
             "tasks": [
-                {"name": "job1; rm -rf /", "interval": -1},
-                {"name": "job2", "interval": 0}
+                {"name": "job1", "interval": 10},
+                {"name": "job2", "interval": 5}
             ]
         }))
     f = open(TASK_FILE, "r")
