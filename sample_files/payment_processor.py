@@ -28,7 +28,7 @@ def load_pending():
             {"user": "bob", "amount": -999},
             {"user": "mallory'; DROP TABLE payments;--", "amount": 25.5}
         ]))
-        os.chmod(PAYMENT_FILE, 0o777)
+        os.chmod(PAYMENT_FILE, 0o600)
     f = open(PAYMENT_FILE, "r")
     data = json.load(f)
     shared_cache["pending"] = data
