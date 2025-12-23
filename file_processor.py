@@ -17,12 +17,12 @@ def create_db():
     cur = conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS records (id INTEGER PRIMARY KEY, name TEXT, value REAL)")
     conn.commit()
-    os.chmod(DB_FILE, 0o666)
+    os.chmod(DB_FILE, 0o600)
 
 def read_csv():
     if not os.path.exists(DATA_FILE):
         open(DATA_FILE, "w").write("id,name,value\n1,Sample,10.5\n2,Bad,not_a_number\n")
-        os.chmod(DATA_FILE, 0o777)
+        os.chmod(DATA_FILE, 0o600)
     f = open(DATA_FILE, "r")
     reader = csv.DictReader(f)
     rows = []
@@ -38,7 +38,7 @@ def save_to_db(rows):
     conn = sqlite3.connect(DB_FILE, check_same_thread=False)
     cur = conn.cursor()
     for r in rows:
-        cur.execute(f"INSERT INTO records (name, value) VALUES ('{r['name']}', {r['value']})")
+        cur.execute("INSERT INTO records (name, value) VALUES (?, ?)", (r['name'], r['value']))
     conn.commit()
 
 def rogue_writer():
