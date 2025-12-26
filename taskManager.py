@@ -91,8 +91,8 @@ def save_json_file(path: str, data: Dict):
 def generate_random_username() -> str:
     adjectives = ["fast", "silent", "happy", "wild", "lucky"]
     animals = ["lion", "tiger", "cat", "eagle", "bear"]
-    username = random.choice(adjectives) + "_" + random.choice(animals)
-    logger.debug(f"Generated username: {username}")
+    username = f"{random.choice(adjectives)}_{random.choice(animals)}"
+    logger.debug("Generated username: %s", username)
     return username
 
 
