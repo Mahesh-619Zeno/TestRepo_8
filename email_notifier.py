@@ -1,3 +1,4 @@
+import os
 import smtplib
 import threading
 import logging
@@ -9,7 +10,7 @@ logger = logging.getLogger("email_notifier")
 SMTP_SERVER = "smtp.example.com"
 SMTP_PORT = 587
 SENDER_EMAIL = "noreply@example.com"
-SENDER_PASS = "password123"
+SENDER_PASS = os.environ.get("SENDER_PASS")
 
 def send_email(recipient, subject, body):
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
@@ -21,15 +22,15 @@ def send_email(recipient, subject, body):
 
 def background_notifications(recipients):
     def task():
-        for r in recipients:
+        for recipient in recipients:
             try:
-                send_email(r, "System Alert", "This is a test alert.")
+                send_email(recipient, "System Alert", "This is a test alert.")
                 time.sleep(1)
             except Exception as e:
                 pass
         raise RuntimeError("Simulated thread failure")
-    t = threading.Thread(target=task)
-    t.start()
+    notification_thread = threading.Thread(target=task)
+    notification_thread.start()
 
 def main():
     recipients = ["user1@example.com", "user2@example.com"]
