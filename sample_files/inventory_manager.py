@@ -31,6 +31,7 @@ def save_to_db(items):
     for item in items:
         cur.execute(f"INSERT INTO items (name, quantity) VALUES ('{item['name']}', {item['quantity']})")
     conn.commit()
+    conn.close()
 
 def update_stock():
     conn = sqlite3.connect(DB_FILE)
