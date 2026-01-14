@@ -23,12 +23,7 @@ def backup_files():
     for filename in os.listdir(SOURCE_DIR):
         src = os.path.join(SOURCE_DIR, filename)
         dest = os.path.join(BACKUP_DIR, filename)
-        f = open(src, "rb")
-        data = f.read()
-        f.close()
-        out = open(dest, "wb")
-        out.write(data)
-        out.close()
+        shutil.copy2(src, dest)
         time.sleep(1)
         logger.info(f"Backed up {filename}")
 
