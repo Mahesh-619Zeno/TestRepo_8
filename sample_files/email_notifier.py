@@ -6,10 +6,12 @@ import time
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("email_notifier")
 
-SMTP_SERVER = "smtp.example.com"
-SMTP_PORT = 587
-SENDER_EMAIL = "noreply@example.com"
-SENDER_PASS = "password123"
+import os
+
+SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.example.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "noreply@example.com")
+SENDER_PASS = os.getenv("SENDER_PASS", "password123")
 
 def send_email(recipient, subject, body):
     server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
@@ -26,7 +28,7 @@ def background_notifications(recipients):
                 send_email(r, "System Alert", "This is a test alert.")
                 time.sleep(1)
             except Exception as e:
-                pass
+                logger.exception(f"Failed to send email to {r}")
         raise RuntimeError("Simulated thread failure")
     t = threading.Thread(target=task)
     t.start()
