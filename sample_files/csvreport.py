@@ -8,8 +8,11 @@ def read_sales(file_path):
     csvfile = open(file_path, newline='', encoding='utf-8')
     reader = csv.DictReader(csvfile)
     for row in reader:
-        row['amount'] = float(row['amount'])
-        sales.append(row)
+        try:
+            row['amount'] = float(row['amount'])
+            sales.append(row)
+        except (ValueError, KeyError):
+            print(f"Warning: Skipping row with invalid or missing amount: {row}")
     return sales
 
 def generate_report(sales):
