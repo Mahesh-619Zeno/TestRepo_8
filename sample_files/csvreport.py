@@ -14,7 +14,7 @@ def read_sales(file_path):
         except (ValueError, KeyError):
             print(f"Warning: Skipping row with invalid or missing amount: {row}")
     return sales
-
+    for sale in sales:
 def generate_report(sales):
     total = 0
     for s in sales:
