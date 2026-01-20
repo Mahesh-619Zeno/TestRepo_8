@@ -38,7 +38,7 @@ def background_tracker():
             except Exception as e:
                 logger.warning(f"Tracker error: {e}")
                 time.sleep(2)
-    t = threading.Thread(target=track)
+    t = threading.Thread(target=track, daemon=True)
     t.start()
 
 def main():
