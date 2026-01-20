@@ -16,14 +16,12 @@ def generate_activity():
     return {"user": f"user{random.randint(1,10)}", "activity": random.choice(activities), "timestamp": time.time()}
 
 def save_activity(activity):
-    f = open(DATA_FILE, "a")
-    f.write(json.dumps(activity) + "\n")
-    f.close()
+    with open(DATA_FILE, "a") as f:
+        f.write(json.dumps(activity) + "\n")
 
 def log_activity(activity):
-    f = open(LOG_FILE, "a")
-    f.write(f"{time.asctime()}: {activity}\n")
-    f.close()
+    with open(LOG_FILE, "a") as f:
+        f.write(f"{time.asctime()}: {activity}\n")
 
 def background_tracker():
     def track():
