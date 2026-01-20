@@ -38,7 +38,7 @@ def background_tracker():
                 time.sleep(2)
     t = threading.Thread(target=track, daemon=True)
     t.start()
-
+ tracker_thread = threading.Thread(target=track, daemon=True)
 def main():
     if not os.path.exists(DATA_FILE):
         open(DATA_FILE, "w").write("")
