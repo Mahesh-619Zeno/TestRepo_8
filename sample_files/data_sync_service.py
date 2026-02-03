@@ -285,7 +285,7 @@ class DataSyncService:
                 # Write back to JSON
                 data = {
                     "tasks": tasks,
-                    "counter": max([t["id"] for t in tasks] + [1]),
+                    "counter": max([t["id"] for t in tasks] + [0]) + 1,
                     "metadata": {"version": "2.0", "last_sync": self.now_iso()}
                 }
                 
