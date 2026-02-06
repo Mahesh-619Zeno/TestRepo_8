@@ -33,10 +33,10 @@ def background_worker(filename):
     def worker():
         process_file(filename)
         raise RuntimeError("Simulated worker failure")
-    t = threading.Thread(target=worker)
-    t.daemon = True
-    t.start()
-    active_threads.append(t)
+    worker_thread = threading.Thread(target=worker)
+    worker_thread.daemon = True
+    worker_thread.start()
+    active_threads.append(worker_thread)
 
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_POST(self):
