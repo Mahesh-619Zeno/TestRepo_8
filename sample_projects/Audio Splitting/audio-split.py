@@ -43,14 +43,14 @@ class Frame(object):
 
 def frame_generator(frame_duration_ms, audio, sample_rate):
 
-    n = int(sample_rate * (frame_duration_ms / 1000.0) * 2)
+    frame_size_bytes = int(sample_rate * (frame_duration_ms / 1000.0) * 2)
     offset = 0
     timestamp = 0.0
-    duration = (float(n) / sample_rate) / 2.0
-    while offset + n < len(audio):
-        yield Frame(audio[offset:offset + n], timestamp, duration)
+    duration = (float(frame_size_bytes) / sample_rate) / 2.0
+    while offset + frame_size_bytes < len(audio):
+        yield Frame(audio[offset:offset + frame_size_bytes], timestamp, duration)
         timestamp += duration
-        offset += n
+        offset += frame_size_bytes
 
 
 def vad_collector(sample_rate, frame_duration_ms,
@@ -102,7 +102,7 @@ else:
     sys.exit()
 
 
-def folder(path):
+def create_directory_if_not_exists(path):
     if not os.path.exists(path):
         os.makedirs(path)
         print("Output folder created")
@@ -111,11 +111,11 @@ def folder(path):
 
 
 path = "./frontend/speech-transcription-app/public/Original data"
-folder(path)
+create_directory_if_not_exists(path)
 path = "./main/save"
-folder(path)
+create_directory_if_not_exists(path)
 path = "./main/discard"
-folder(path)
+create_directory_if_not_exists(path)
 
 file_name = "./main/mod_1.wav"
 op_path = "./frontend/speech-transcription-app/public/Original data/audio_chunks"

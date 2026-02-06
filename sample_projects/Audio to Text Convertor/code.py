@@ -3,17 +3,17 @@ import speech_recognition as sr
 
 def convert_audio_to_text():
     # Initialize the recognizer
-    r = sr.Recognizer()
+    recognizer = sr.Recognizer()
 
     # Open the microphone and start recording
     with sr.Microphone() as source:
         print("Speak something...")
-        audio = r.listen(source)  # Record audio from the microphone
+        audio = recognizer.listen(source)  # Record audio from the microphone
 
     try:
         # Use the recognizer to convert audio to text
         # Convert audio to text using Google Speech Recognition service
-        text = r.recognize_google(audio)
+        text = recognizer.recognize_google(audio)
         return text
     except sr.UnknownValueError:
         # Handle the case when speech cannot be recognized
