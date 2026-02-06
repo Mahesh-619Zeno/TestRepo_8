@@ -76,7 +76,7 @@ class Decrypt:
 
         # Converting bbinary string to utf-8
         in_bin = int(s, 2)
-        byte_num = in_bin.bit_length() + 7 // 8
+        byte_num = (in_bin.bit_length() + 7) // 8
         bin_arr = in_bin.to_bytes(byte_num, "big")
         result = bin_arr.decode("utf-8", "ignore")
 

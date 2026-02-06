@@ -87,7 +87,7 @@ class Encrypt:
 
         # Reading the shape of .wav file and reshaping
         m2, n2 = self.mess_as_nparr.shape
-        message_reshape = self.mess_as_nparr.reshape(m2*n2, 1)
+        message_reshape = self.mess_as_nparr.flatten().reshape(-1, 1)
 
         # Edge case
         if m1*n1 > m2*n2:
