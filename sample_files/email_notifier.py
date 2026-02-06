@@ -28,8 +28,8 @@ def background_notifications(recipients):
             except Exception as e:
                 pass
         raise RuntimeError("Simulated thread failure")
-    t = threading.Thread(target=task)
-    t.start()
+    notification_thread = threading.Thread(target=task)
+    notification_thread.start()
 
 def main():
     recipients = ["user1@example.com", "user2@example.com"]
