@@ -3,7 +3,7 @@ import sys
 import requests
 from datetime import datetime
 
-# Load environment variables
+
 API_KEY = os.getenv("WEATHER_API_KEY")
 BASE_URL = os.getenv("BASE_URL", "http://api.openweathermap.org/data/2.5/weather")
 
@@ -19,7 +19,6 @@ def get_weather(city_name):
         'q': city_name,
         'appid': API_KEY
     }
-
     try:
         response = requests.get(BASE_URL, params=params)
         response.raise_for_status()
@@ -37,42 +36,31 @@ def print_weather_info(data):
 
     try:
         city = data['name']
-        country = data['sys']['country']
-        temp = kelvin_to_celsius(data['main']['temp'])
-        weather = data['weather'][0]['description']
-        humidity = data['main']['humidity']
-        wind_speed = data['wind']['speed']
-        timestamp = data['dt']
-        time = datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
+        temp = data['main']['temp']
+        print(f"{city}: {temp}K")
+        log_weather(data)  # Scenario 1 addition
+    except KeyError:
+        pass
 
-        print("\n--- Weather Report ---")
-        print(f"Location   : {city}, {country}")
-        print(f"Time       : {time}")
-        print(f"Temperature: {temp:.2f}°C")
-        print(f"Weather    : {weather.capitalize()}")
-        print(f"Humidity   : {humidity}%")
-        print(f"Wind Speed : {wind_speed} m/s")
-        print("----------------------\n")
-    except KeyError as e:
-        print(f"Unexpected data format. Missing key: {e}")
+LOG_FILE = "weather_log.txt"
+
+def log_weather(data):
+    if not data:
+        return
+    try:
+        city = data['name']
+        temp = data['main']['temp']
+        time = datetime.fromtimestamp(data['dt']).strftime('%Y-%m-%d %H:%M:%S')
+        with open(LOG_FILE, "a") as f:
+            f.write(f"{time} - {city}: {temp}K\n")
+    except KeyError:
+        pass
 
 def run_cli():
-    print("Welcome to the Weather Reporter CLI 🌤️")
-    print("Type 'exit' to quit.\n")
-
-    while True:
-        city = input("Enter city name: ").strip()
-        if city.lower() == 'exit':
-            print("Goodbye!")
-            break
-
-        if not city:
-            print("Please enter a valid city name.")
-            continue
-
-        print("Fetching weather data...")
-        data = get_weather(city)
-        print_weather_info(data)
+    print("Welcome to Weather CLI (Scenario 1)")
+    city = input("Enter city: ").strip()
+    data = get_weather(city)
+    print_weather_info(data)
 
 if __name__ == "__main__":
     run_cli()
