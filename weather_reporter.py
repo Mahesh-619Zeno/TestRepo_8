@@ -3,7 +3,6 @@ import sys
 import requests
 from datetime import datetime
 
-
 API_KEY = os.getenv("WEATHER_API_KEY")
 BASE_URL = os.getenv("BASE_URL", "http://api.openweathermap.org/data/2.5/weather")
 
@@ -19,15 +18,33 @@ def get_weather(city_name):
         'q': city_name,
         'appid': API_KEY
     }
+
     try:
         response = requests.get(BASE_URL, params=params)
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.HTTPError as http_err:
-        print(f"HTTP error occurred: {http_err}")
     except requests.exceptions.RequestException as err:
         print(f"Error: {err}")
     return None
+
+LOG_DIR = os.getenv("WEATHER_LOG_DIR", ".")
+LOG_FILE = os.path.join(LOG_DIR, "weather_log.txt")
+
+def log_weather(data):
+    """Logs weather data to a file using existing imports"""
+    if not data:
+        return
+
+    try:
+        city = data["name"]
+        temp = data["main"]["temp"]
+        timestamp = datetime.fromtimestamp(data["dt"]).strftime("%Y-%m-%d %H:%M:%S")
+
+        with open(LOG_FILE, "a") as file:
+            file.write(f"{timestamp} | {city} | {temp}K\n")
+
+    except KeyError:
+        print("Failed to log weather data due to missing fields.")
 
 def print_weather_info(data):
     if not data:
@@ -35,30 +52,22 @@ def print_weather_info(data):
         return
 
     try:
-        city = data['name']
-        temp = data['main']['temp']
-        print(f"{city}: {temp}K")
-        log_weather(data)  # Scenario 1 addition
-    except KeyError:
-        pass
+        city = data["name"]
+        temp = data["main"]["temp"]
+        print(f"City: {city}, Temperature: {temp}K")
+        log_weather(data)
 
-LOG_FILE = "weather_log.txt"
-
-def log_weather(data):
-    if not data:
-        return
-    try:
-        city = data['name']
-        temp = data['main']['temp']
-        time = datetime.fromtimestamp(data['dt']).strftime('%Y-%m-%d %H:%M:%S')
-        with open(LOG_FILE, "a") as f:
-            f.write(f"{time} - {city}: {temp}K\n")
     except KeyError:
-        pass
+        print("Unexpected data format.")
 
 def run_cli():
     print("Welcome to Weather CLI (Scenario 1)")
-    city = input("Enter city: ").strip()
+    city = input("Enter city name: ").strip()
+
+    if not city:
+        print("City name cannot be empty.")
+        return
+
     data = get_weather(city)
     print_weather_info(data)
 
