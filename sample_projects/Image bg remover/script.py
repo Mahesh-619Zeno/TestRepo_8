@@ -42,7 +42,7 @@ def remove_background(image_path, save_path, alpha_foreground=255, alpha_backgro
     image_with_alpha = Image.alpha_composite(
         Image.new('RGBA', image.size, (255, 255, 255, alpha_background)), image)
     image_with_alpha.putalpha(mask_pil.point(
-        lambda p: alpha_foreground if p else 0))
+        lambda pixel_value: alpha_foreground if pixel_value else 0))
 
     # Save the resulting image with transparent background
     image_with_alpha.save(save_path, format='PNG')

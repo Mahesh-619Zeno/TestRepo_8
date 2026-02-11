@@ -13,20 +13,20 @@ def get_ext(url: str) -> str | None:
 
 
 def download_img():
-    u = url_ent.get()
-    n = name_ent.get()
-    f = folder_ent.get()
+    url = url_ent.get()
+    file_name = name_ent.get()
+    folder_path = folder_ent.get()
 
-    if not u or not n or not f:
+    if not url or not file_name or not folder_path:
         messagebox.showerror("Error", "Please fill in all fields.")
         return
 
-    ext = get_ext(u)
+    ext = get_ext(url)
     if not ext:
         messagebox.showerror("Error", "Invalid image URL.")
         return
 
-    img_path = os.path.join(f, f"{n}{ext}")
+    img_path = os.path.join(folder_path, f"{file_name}{ext}")
 
     if os.path.isfile(img_path):
         messagebox.showerror(

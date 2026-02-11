@@ -12,14 +12,14 @@ def choose_image():  # reading the image
 #  functions for every border type
 
 
-def constant_border():
+def apply_constant_border():
     bordered = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_CONSTANT)
     cv2.imshow("Constant border", bordered)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
-def reflection_border():
+def apply_reflection_border():
     bordered = cv2.copyMakeBorder(img, 50, 50, 50, 50, cv2.BORDER_REFLECT)
     cv2.imshow("Reflection border", bordered)
     cv2.waitKey(0)
@@ -52,7 +52,7 @@ window.title("Borders on images")
 window.geometry('320x220')
 label = tk.Label(window, text="Select an image and then choose an option").grid(
     row=0, column=0)
-b = tk.Button(window, text="Choose image",
+choose_image_button = tk.Button(window, text="Choose image",
               command=choose_image).grid(row=1, column=0)
 
 rad1 = tk.Radiobutton(window, text='Constant border',
