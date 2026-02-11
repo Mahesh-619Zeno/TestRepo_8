@@ -32,20 +32,20 @@ def get_histogram(image, bins):
 hist = get_histogram(flat, 256)
 
 # execute the fn
-cs = np.cumsum(hist)
+cumulative_sum = np.cumsum(hist)
 
 # numerator & denomenator
-nj = (cs - cs.min()) * 255
-N = cs.max() - cs.min()
+normalized_intensity = (cumulative_sum - cumulative_sum.min()) * 255
+N = cumulative_sum.max() - cumulative_sum.min()
 
 # re-normalize the cumsum
-cs = nj / N
+cumulative_sum = normalized_intensity / N
 
 # cast it back to uint8 since we can't use floating point values in images
-cs = cs.astype('uint8')
+cumulative_sum = cumulative_sum.astype('uint8')
 
 # get the value from cumulative sum for every index in flat, and set that as img_new
-img_new = cs[flat]
+img_new = cumulative_sum[flat]
 
 # put array back into original shape since we flattened it
 img_new = np.reshape(img_new, img.shape)

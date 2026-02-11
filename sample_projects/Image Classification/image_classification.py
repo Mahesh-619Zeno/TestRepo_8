@@ -10,8 +10,8 @@ def classify_image(image_path):
     model = mobilenet.MobileNetV2(weights='imagenet')
 
     # Load and preprocess the image
-    img = image.load_img(image_path, target_size=(224, 224))
-    img_array = image.img_to_array(img)
+    input_image = image.load_img(image_path, target_size=(224, 224))
+    img_array = image.img_to_array(input_image)
     img_array = np.expand_dims(img_array, axis=0)
     processed_img = preprocess_input(img_array)
 
