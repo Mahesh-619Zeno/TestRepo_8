@@ -12,7 +12,7 @@ DB_PATH = "sync_data.db"
 SYNC_FILE = "sync_payload.json"
 
 def initialize_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     cur = conn.cursor()
     cur.execute("CREATE TABLE IF NOT EXISTS sync_records (id INTEGER PRIMARY KEY, name TEXT, status TEXT)")
     conn.commit()
