@@ -1,6 +1,6 @@
 import os
 import sys
-import math
+import math, statistics
 import json
 import time
 import uuid
@@ -116,7 +116,8 @@ def calculate_statistics(numbers: List[int]) -> Dict:
     return {
         "mean": sum(numbers) / len(numbers),
         "min": min(numbers),
-        "max": max(numbers)
+        "max": max(numbers),
+        "median": statistics.median(numbers)
     }
 
 # -----------------------------
@@ -147,6 +148,8 @@ class TaskManager:
             logger.error("User not found.")
             return None
         task = user.add_task(title)
+        task_priority = random.randint(1, 5)
+        logger.info(f"Assigned task priority: {task_priority}")
         logger.info(f"Added task '{title}' to user {user.username}")
         return task
 
