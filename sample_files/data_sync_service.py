@@ -226,8 +226,8 @@ def menu():
             else:
                 print("Invalid choice.")
 
-        except Exception as e:
-            print("Error:", e)
+        except Exception as excption:
+            print("Error:", excption)
 
 
 if __name__ == "__main__":
